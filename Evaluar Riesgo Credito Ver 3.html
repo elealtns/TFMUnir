@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargar y Procesar CSV</title>
+    <!-- Llama al archivo CSS -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+
+    <!-- <link rel="stylesheet" href="styles.css">  -->
+	<style>
+		/* Estilos para botones */
+		button {
+		  padding: 10px 20px; /* Espaciado interno */
+		  background-color: #007BFF; /* Color de fondo */
+		  color: #fff; /* Color de texto */
+		  border: none; /* Sin borde */
+		  border-radius: 5px; /* Bordes redondeados */
+		  cursor: pointer; /* Cambiar el cursor al pasar el ratón */
+		}
+
+		/* Estilo al pasar el ratón sobre el botón */
+		button:hover {
+		  background-color: #0056b3; /* Cambia el color de fondo al pasar el ratón */
+		}
+
+		/* Estilos para el formulario */
+		form {
+		  text-align: center; /* Alinea el contenido del formulario al centro */
+		}
+
+		/* Estilos para el contenedor de variables */
+		#variable-values {
+		  margin-top: 20px; /* Espaciado superior */
+		}
+
+		/* Estilos para las variables */
+		p {
+		  font-weight: bold; /* Texto en negrita */
+		  margin-bottom: 10px; /* Espaciado inferior */
+		}
+</style>
+
+</head>
+<body>
+
+    <!-- Formulario para cargar el archivo CSV -->
+    <form id="upload-form">
+        <input type="file" id="csv-file" accept=".csv">
+        <button type="button" id="upload-button">Cargar CSV</button>
+    </form>
+	<form id="calcular-form">
+			<!-- Botón para llamar a la API con datos predefinidos -->
+		<button type="button" id="call-api-button">Llamar a la API</button>
+			
+		<!-- Botón para validar llamada a la API Con Datos-->
+		<button type="button" id="validate-api-button">Validar API</button>
+	</form>
+	
+	<table border="1" style="width: 75%; margin: 0 auto; background-color: #f5f5f5;">
+		<tr>
+			<td colspan="4" style="text-align: center; background-color: #e0e0e0;">Procesamiento en Bloque</td>
+		</tr>    
+		<tr>
+			<td style="background-color: #e0e0e0">Hora de inicio:</td>
+			<td id="hora-inicio" colspan="3" style="text-align: right; background-color: #f9f9f9;"></td>
+		<tr>
+			<td style="background-color: #e0e0e0">Hora final:</td>
+			<td id="hora-final" colspan="3" style="text-align: right; background-color: #f9f9f9;"></td>
+		</tr>
+		<tr>
+			<td style="background-color: #e0e0e0">Duración (Segundos):</td>
+			<td id="diferencia-tiempo" colspan="3" style="text-align: right; background-color: #f9f9f9;"></td>	
+		</tr> 
+		
+		<tr>
+			<td colspan="4" style="height: 20px;"></td>
+		</tr>
+		<tr>
+			<td colspan="4" style="text-align: center; background-color: #e0e0e0;">Resultados</td>
+		</tr> 
+		<tr>
+			<td colspan="4" style="height: 5px;"></td>
+		</tr>		
+		<tr>
+			<td></td>
+			<td></td>
+			<td colspan="2" style="text-align: center; background-color: #e0e0e0;">Clase Real</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td style="background-color: #e0e0e0;">Positiva</td>
+			<td style="background-color: #e0e0e0;">Negativa</td>
+		</tr>
+		<tr>
+			<td rowspan="2" style="background-color: #e0e0e0;">Predicción</td>
+			<td style="background-color: #f2f2f2;">Positiva</td>
+			<td id="VP-cell" style="text-align: right; background-color: #f9f9f9;"></td>
+			<td id="FP-cell" style="text-align: right; background-color: #f9f9f9;"></td>
+		</tr>
+		<tr>
+			<td style="background-color: #f2f2f2;">Negativa</td>
+			<td id="FN-cell" style="text-align: right; background-color: #f9f9f9;"></td>
+			<td id="VN-cell" style="text-align: right; background-color: #f9f9f9;"></td>
+		</tr>
+		<tr>
+			<td>Total Instancias</td>
+			<td></td>
+			<td></td>
+			<td id="TOTAL-text" style="text-align: right; background-color: #e0e0e0;"></td>
+		</tr>
+		<tr>
+		
+		<tr>
+			<td colspan="4" style="height: 20px;"></td>
+		</tr>
+		<tr>
+			<td colspan="4" style="text-align: center; background-color: #e0e0e0;">Métricas</td>
+		</tr>  
+		<tr>
+			<td style="background-color: #e0e0e0">Exactitud:</td>
+			<td id="ACCURACY-text" colspan="3" style="text-align: left; background-color: #f9f9f9;"></td>
+		<tr>
+			<td style="background-color: #e0e0e0">Precisión:</td>
+			<td id="PRECISION-text" colspan="3" style="text-align: left; background-color: #f9f9f9;"></td>
+		</tr>	
+		<tr>
+			<td style="background-color: #e0e0e0">Recall:</td>
+			<td id="RECALL-text" colspan="3" style="text-align: left; background-color: #f9f9f9;"></td>
+		</tr>
+		<tr>
+			<td style="background-color: #e0e0e0">Especificidad:</td>
+			<td id="ESPECIFICIDAD-text" colspan="3" style="text-align: left; background-color: #f9f9f9;"></td>
+		</tr>
+		<tr>
+			<td colspan="4" style="height: 20px;"></td>
+		</tr>
+		<tr>
+			<td colspan="4" style="height: 20px;"></td>
+		</tr>
+		<tr>
+			<td colspan="4" style="text-align: center; background-color: #e0e0e0;">Monitor respuestas API</td>
+		</tr> 		
+	    <tr>
+			<td colspan="4" style="text-align: left;">
+				Fecha:<span id="fecha-text"></span><br>
+				URL: <span id="URL-text"></span><br>
+				Valor Esperado: <span id="valor-text"></span><br>
+				<br>
+				<span id="api-response"></span><br>
+				Predicción: <span id="prediccion-text"></span><br>
+				Resultado Caso fila: <span id="ResultadoFilas-text"></span><br>
+			</td>
+		</tr>	
+	    <tr>
+			<td colspan="4" style="text-align: left; background-color: white; color: red;">
+				<span id="msg-sistema-text"></span><br>
+			</td>
+		</tr>	
+		
+	</table>
+
+
+	<p></p>
+
+
+	
+    <!-- Formulario para procesar y mostrar los registros -->
+    <form id="process-form" style="display: none;">
+        <h2>Primeros n50 registros del archivo CSV:</h2>
+        <table id="csv-table">
+            <thead>
+                <tr>
+                    <th>Columna 1</th>
+                    <th>Columna 2</th>
+                    <th>Columna 3</th>
+                    <!-- Agrega más encabezados de columna según tu archivo CSV -->
+                </tr>
+            </thead>
+            <tbody id="csv-data">
+                <!-- Aquí se mostrarán los registros -->
+            </tbody>
+        </table>
+		
+	</form>
+	
+	<div id="mi-iframe-container">
+		<iframe sandbox="allow-modals"></iframe>
+		<canvas id="myChart" width="400" height="400"></canvas>
+	</div> 
+	  
+	
+	<script>
+	// Captura los elementos del DOM
+
+		//const matplotlib = window.matplotlib;
+		
+		// Importa las bibliotecas necesarias
+		const numpy = window.numpy;
+		const pandas = window.pandas;
+	
+		const csvFileInput = document.getElementById("csv-file");
+		const uploadButton = document.getElementById("upload-button");
+		const processForm = document.getElementById("process-form");
+		const csvTable = document.getElementById("csv-table");
+		const csvData = document.getElementById("csv-data");
+				
+		let vp = 0; let fp = 0;	let fn = 0;	let vn = 0;
+		
+		
+		let horaInicio = new Date();
+		let horaFinal = new Date();
+		let diferenciaTiempo = (horaFinal - horaInicio);
+		
+		// Agrega un evento al botón de carga
+		uploadButton.addEventListener("click", () => {
+			// Verifica si se ha seleccionado un archivo CSV
+			if (csvFileInput.files && csvFileInput.files.length > 0) {
+				const selectedFile = csvFileInput.files[0];
+
+				// Utiliza papaparse para analizar el archivo CSV
+				Papa.parse(selectedFile, {
+					header: true, // Indica que la primera fila contiene encabezados de columna
+					preview: 500,   // Limita la vista previa a las primeras 5 filas
+					complete: function (results) {
+						// Procesa los resultados y muestra los registros
+						const columns = Object.keys(results.data[0]);
+						let tableHTML = "";
+
+						// Crea encabezados de columna
+						tableHTML += "<thead><tr>";
+						columns.forEach(column => {
+							tableHTML += `<th>${column}</th>`;
+						});
+						tableHTML += "</tr></thead>";
+
+						// Crea filas con los valores de las primeras 5 filas
+						tableHTML += "<tbody>";
+						results.data.slice(0, 500).forEach(row => {
+							tableHTML += "<tr>";
+							columns.forEach(column => {
+								tableHTML += `<td>${row[column]}</td>`;
+							});
+							tableHTML += "</tr>";
+						});
+						tableHTML += "</tbody>";
+
+						// Muestra la tabla con columnas y valores
+						csvTable.innerHTML = tableHTML;
+
+						// Muestra el formulario de procesamiento
+						processForm.style.display = "block";
+					}
+				});
+			} else {
+				// Muestra un mensaje de error si no se ha seleccionado ningún archivo
+				const msgsistematextElement = document.getElementById("msg-sistema-text");
+				msgsistematextElement.textContent = "Selecciona un archivo CSV antes de cargar.";
+			}
+		});
+
+
+		// Captura el botón para llamar a la API Predefinidos
+		const callApiButton = document.getElementById("call-api-button");
+		// Agrega un evento al botón para llamar a la API
+		callApiButton.addEventListener("click", () => {
+		// Variables globales para contar casos
+		let vp = 0; let fp = 0;	let fn = 0;	let vn = 0;
+		
+		
+		// Obtiene los datos del registro 5 y realiza la llamada a la API
+		getAndCallApi();
+		
+			
+		});
+
+
+		// Función para obtener los datos del registro 5 y llamar a la API
+		function getAndCallApi() {
+			horaInicio = new Date();
+			
+			const horaInicioElement = document.getElementById("hora-inicio");
+			horaInicioElement.textContent = horaInicio.toLocaleTimeString();
+			
+			// Obtén los datos del registro 5 desde la tabla (código similar al anterior)
+			const tableRows = document.querySelectorAll("#csv-table tbody tr");
+			    // Verifica si hay suficientes registros
+			if (tableRows.length > 0) {
+				// Itera a través de todas las filas
+				let rowIndex = 0;
+				tableRows.forEach((row) => {
+					const columns = Array.from(row.querySelectorAll("td")).map(td => td.textContent);
+					const ValorEsperado = columns[0];
+					
+					// Crea un objeto 'data' con los datos de la fila
+					const data = {};
+					for (let i = 1; i < columns.length; i++) {
+						data[`columna${i}`] = columns[i];
+					}
+					
+					// Llama a la API con los datos de la fila y el ValorEsperado
+					callApiWithFormData(data, ValorEsperado, rowIndex);
+					// Aumenta rowIndex en cada iteración
+					rowIndex++;
+				});
+				
+				// Calcula la hora final después de recorrer todas las filas
+				const horaFinal = new Date();
+				const horaFinalElement = document.getElementById("hora-final");
+				horaFinalElement.textContent = horaFinal.toLocaleTimeString();
+				
+				// Calcula la diferencia de tiempo
+				const diferenciaTiempo = (horaFinal - horaInicio)/1000;
+				
+				//console.log("Diferencia de tiempo (milisegundos): " + diferenciaTiempo);
+				const diferenciatiempoElement = document.getElementById("diferencia-tiempo");
+				diferenciatiempoElement.textContent = diferenciaTiempo;		
+
+				
+			} else {
+				// Muestra un mensaje de error si no se ha seleccionado ningún archivo
+				const msgsistematextElement = document.getElementById("msg-sistema-text");
+				msgsistematextElement.textContent = "No hay suficientes registros para realizar la llamada a la API.";
+			}
+		}
+
+
+		// Función para realizar la llamada a la API REST con los datos
+		function callApiWithFormData(data, ValorEsperado, rowIndex) {
+			// Convierte el objeto 'data' a una cadena de parámetros separados por comas
+			const dataString = Object.values(data).join(",");			
+
+			// Crear la variable con la URL y el queryString
+			const apiUrl = `https://vhj6cx17ub.execute-api.us-east-1.amazonaws.com/default/FLSageMakerDemolinear?endpoint=Linear-endpoint-Heloc-2023-09-07-05-05-32&data=${dataString}`;
+
+			// Imprimir la URL en la consola
+			//console.log("URL de la solicitud Fetch:", apiUrl);
+
+			// Realiza una solicitud GET a la URL de la API con los datos como parámetros en la URL
+			fetch(apiUrl, {
+				method: "GET"
+			})
+			.then(response => response.json())
+			.then(responseData => {
+				// Maneja la respuesta de la API aquí
+				let ResultadoFilas = "Pendiente";
+				const URLElement = document.getElementById("URL-text");			
+				URLElement.textContent = apiUrl				
+				
+				// Mostrar la respuesta en el elemento HTML
+				const apiResponseElement = document.getElementById("api-response");
+				apiResponseElement.textContent = "Respuesta de la API: " + JSON.stringify(responseData);
+
+				// Asigna los valores a las variables respuesta01 y fecha
+				const respuesta01 = responseData.prediccion;
+				const fecha = responseData.fecha;
+				
+				// Después de recibir la respuesta JSON de la API y asignar los valores a respuesta01 y fecha
+				const prediccionElement = document.getElementById("prediccion-text");
+				prediccionElement.textContent = respuesta01;
+				
+				const valorElement = document.getElementById("valor-text");
+				valorElement.textContent = ValorEsperado;
+				
+				const fechaElement = document.getElementById("fecha-text");
+				fechaElement.textContent = fecha;
+				
+				const VPElement = document.getElementById("VP-cell");
+				const FPElement = document.getElementById("FP-cell");
+				const FNElement = document.getElementById("FN-cell");
+				const VNElement = document.getElementById("VN-cell");
+				const TOTALElement = document.getElementById("TOTAL-text");
+				
+				const ACCURACYElement = document.getElementById("ACCURACY-text");
+				const PRECISIONElement = document.getElementById("PRECISION-text");
+				const RECALLElement = document.getElementById("RECALL-text");
+				const ESPECIFICIDADElement = document.getElementById("ESPECIFICIDAD-text");
+				
+				const ResultadoFilasElement = document.getElementById("ResultadoFilas-text");
+				
+				if (respuesta01 === "Good") {
+					if (ValorEsperado === "Good") {
+						//console.log("VP Las variables Esp/Resp: "+ValorEsperado+" === "+respuesta01);
+						ResultadoFilas = "VP";
+						vp++; 
+					} else {
+						//console.log("FP Las variables Esp/Resp: "+ValorEsperado+" === "+respuesta01);
+						ResultadoFilas = "FP";
+						fp++; 
+					}
+				} else {
+					if (ValorEsperado === "Bad") {
+						//console.log("VN Las variables Esp/Resp: "+ValorEsperado+" === "+respuesta01);
+						ResultadoFilas = "VN";
+						vn++; 
+					}
+					else {
+						//console.log("FN Las variables Esp/Resp: "+ValorEsperado+" === "+respuesta01);
+						ResultadoFilas = "FN";
+						fn++; 
+					}
+				} 
+				
+				//console.log("ResultadoFilas: "+ResultadoFilas);
+				ResultadoFilasElement.textContent = ResultadoFilas;
+				VPElement.textContent = vp;
+				FPElement.textContent = fp;
+				FNElement.textContent = fn;
+				VNElement.textContent = vn;
+				TOTALElement.textContent = (vp+fp+fn+vn);
+				
+				ACCURACYElement.textContent = " El modelo acierta aproximadamente el "+((vp + vn)/(vp+fp+fn+vn)*100).toFixed(1)+"% de las veces";
+				PRECISIONElement.textContent = " De todas las predicciones positivas, solo el "+((vp)/(vp+fp)*100).toFixed(1)+"% son verdaderamente positivas";
+ 				RECALLElement.textContent = " El modelo identifica el "+((vp)/(vp+fn)*100).toFixed(1)+"% de los casos positivos reales";
+				ESPECIFICIDADElement.textContent = " El modelo identifica el  "+((vn)/(vn+fp)*100).toFixed(1)+"% de los casos negativos reales";
+			 	
+				
+				
+				
+				// Calcula la hora final después de recorrer todas las filas
+				horaFinal = new Date();
+				const horaFinalElement = document.getElementById("hora-final");
+				horaFinalElement.textContent = horaFinal.toLocaleTimeString();
+				
+				// Calcula la diferencia de tiempo
+				diferenciaTiempo = (horaFinal - horaInicio)/1000;
+				
+				//console.log("Diferencia de tiempo (milisegundos): " + diferenciaTiempo);
+				const diferenciatiempoElement = document.getElementById("diferencia-tiempo");
+				diferenciatiempoElement.textContent = diferenciaTiempo;	
+				
+			})
+			.catch(error => {
+				console.error("Error en la llamada a la API: " + error);
+				// Mostrar la respuesta en el elemento HTML
+				const apiResponseElement = document.getElementById("api-response");
+				apiResponseElement.textContent = "Error en la llamada a la API: " + "Error en la llamada a la API: " + error;
+			});
+		}
+
+
+
+
+		const validateApiButton = document.getElementById("validate-api-button");
+
+		// Agrega un evento al botón para validar la llamada a la API
+		validateApiButton.addEventListener("click", () => {
+
+			// Genera la curva ROC con los valores esperados y calculados
+			generateROCCurve();
+			
+		});
+		
+		function generateROCCurve() {
+		const canvas = document.getElementById("myChart");
+		const ctx = canvas.getContext("2d");
+
+		
+		
+		}
+
+	
+	</script>
+	
+	
+	
+</body>
+</html>
